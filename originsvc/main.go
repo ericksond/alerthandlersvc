@@ -42,7 +42,7 @@ func main() {
 		encodeResponse,
 	)
 
-	http.Handle("/process/alert", processalertHandler)
+	http.Handle("/process", processalertHandler)
 	http.Handle("/metrics", stdprometheus.Handler())
 	logger.Log("msg", "HTTP", "addr", ":8080")
 	logger.Log("err", http.ListenAndServe(":8080", nil))

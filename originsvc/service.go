@@ -2,9 +2,10 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"os"
 
 	"github.com/boltdb/bolt"
+	"github.com/go-kit/kit/log"
 )
 
 // OriginService provides operations on data from originating alert
@@ -15,6 +16,7 @@ type OriginService interface {
 type originService struct{}
 
 func (originService) ProcessAlert(s string) (string, error) {
+	logger := log.NewLogfmtLogger(os.Stderr)
 	if s == "" {
 		return "", ErrEmpty
 	}
@@ -64,7 +66,7 @@ func (originService) ProcessAlert(s string) (string, error) {
 	}
 
 	if key_exists == true {
-		fmt.Printf("key %s exists; doing noting\n", string(key))
+		logger.Log("key", s, "exists", true, "action", nil)
 		return s, nil
 	}
 
@@ -80,30 +82,17 @@ func (originService) ProcessAlert(s string) (string, error) {
 			return ErrDBPut
 		}
 
-		fmt.Printf("key %s added\n", string(key))
-
+		logger.Log("key", s, "exist", false, "action", "added")
 		return nil
 	})
 
 	return s, nil
 }
 
-// ErrEmpty is returned when an input string is empty.
-var ErrEmpty = errors.New("empty string")
-
 var (
-
-	// ErrBucketCreationFailed
+	ErrEmpty                = errors.New("empty string")
 	ErrBucketCreationFailed = errors.New("bucket creation failed")
-
-	// ErrDatabaseNotOpen is returned when a DB instance is accessed before it
-	// is opened or after it is closed.
-	ErrDatabaseNotOpen = errors.New("database not open")
-
-	// ErrBucketNotFound is returned when trying to access a bucket that has
-	// not been created yet.
-	ErrBucketNotFound = errors.New("bucket not found")
-
-	// ErrDBPut is returned when there is an issue with adding kv
-	ErrDBPut = errors.New("error adding kv")
+	ErrDatabaseNotOpen      = errors.New("database not open")
+	ErrBucketNotFound       = errors.New("bucket not found")
+	ErrDBPut                = errors.New("error adding kv")
 )
