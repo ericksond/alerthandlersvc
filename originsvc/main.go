@@ -42,7 +42,15 @@ func main() {
 		encodeResponse,
 	)
 
+	listHandler := httptransport.NewServer(
+		ctx,
+		makeListEndpoint(svc),
+		decodeListRequest,
+		encodeResponse,
+	)
+
 	http.Handle("/process", processalertHandler)
+	http.Handle("/list", listHandler)
 	http.Handle("/metrics", stdprometheus.Handler())
 	logger.Log("msg", "HTTP", "addr", ":8080")
 	logger.Log("err", http.ListenAndServe(":8080", nil))

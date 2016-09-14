@@ -11,6 +11,7 @@ import (
 // OriginService provides operations on data from originating alert
 type OriginService interface {
 	ProcessAlert(string) (string, error)
+	List(string) (map[string]interface{}, error)
 }
 
 type originService struct{}
@@ -87,6 +88,51 @@ func (originService) ProcessAlert(s string) (string, error) {
 	})
 
 	return s, nil
+}
+
+func (originService) List(s string) (map[string]interface{}, error) {
+	if s == "" {
+		return nil, ErrEmpty
+	}
+
+	logger := log.NewLogfmtLogger(os.Stderr)
+	var alerts = []byte("alerts")
+
+	logger.Log("method", "list")
+
+	// open boltdb; create if it does not exist
+	db, err := bolt.Open("alerts.db", 0600, nil)
+	if err != nil {
+		return nil, ErrDatabaseNotOpen
+	}
+	defer db.Close()
+
+	list := make(map[string]interface{})
+
+	// iterate over keys
+	err = db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(alerts)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+
+		err = bucket.ForEach(func(k, v []byte) error {
+			list[string(k)] = string(v)
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return list, nil
 }
 
 var (
